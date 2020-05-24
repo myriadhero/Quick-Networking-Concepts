@@ -1,9 +1,6 @@
-
-    # doToo:
-    #     1. populate unvisited at discovery rather than all at start, 
-    #         so don't have to take up memory for short paths
-
 """
+SEE312, Deakin Uni, Kirill Duplyakin
+
 https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm#Algorithm
 
 1. Mark all nodes unvisited. Create a set of all 
@@ -40,8 +37,14 @@ node is "visited" as above: the algorithm can stop once the destination node has
 the smallest tentative distance among all "unvisited" nodes 
 (and thus could be selected as the next "current").
 
+___________
+
+to do:
+    exceptions for invalid usage, eg. if node doesn't exist
+    check for other edge cases
+
 """
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 # graph = {node:(edges_from_node)} where an edge is (target_node, cost)
 g = {
@@ -56,7 +59,7 @@ g = {
     }
 
 def dijkstra(graph, start, end):
-    unvisited = {node: {"cost": float("inf"), "prev_node": None} for node in g.keys()}
+    unvisited = defaultdict(lambda: {"cost": float("inf"), "prev_node": None})
     curr_cost = 0
     unvisited[start]["cost"] = curr_cost
     visited = OrderedDict()
@@ -68,7 +71,7 @@ def dijkstra(graph, start, end):
         if end in visited: break
 
         for target, cost in g[current]:
-            if target not in unvisited: continue
+            if target in visited: continue # means we've been there via the shortest path
             
             new_cost = curr_cost + cost
             if new_cost < unvisited[target]["cost"]:
@@ -93,7 +96,7 @@ def dijkstra(graph, start, end):
     
     return (reversed(path) if path else [None], visited)
 
-path, visited = dijkstra(g,8,1)
+path, visited = dijkstra(g,1,6)
 
 print("Visited during search:\n"+"\n".join([str(s) for s in visited.items()]))
 print("Best path:","->".join(list(str(s) for s in path)))
