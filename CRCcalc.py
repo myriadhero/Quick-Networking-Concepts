@@ -1,17 +1,18 @@
 """
-Calculate CRC encoding using bitwise operations for arbitrary message and key
+SEE312, Deakin Uni, Kirill Duplyakin
+___________
 
-To optimise:
-1. No need to shift data or return multiple outputs when checking instead of calculating
-2. Getting lengths and for loop feel not quite pythonic...
+Calculate CRC encoding using bitwise operations for arbitrary binary message and key
+
 """
 
-D = int('1010001101', base=2) # message int
-P = int('110101', base=2) # predetermined key int
+D = int('10011011011', base=2) # message int
+P = int('11101', base=2) # predetermined divider int, x^4+x^3+x^2+0^1+x^0
+E1 = int('010010000000000', base=2) # error pattern from b.
+E2 = int('111010000000000', base=2) # error pattern from c.
 
-def CRCremainder(D, P):
-    k = len(bin(D)[2:])
-    p_len = len(bin(P)[2:])
+def crc_encode(D, P):
+    k = D.bit_length(); p_len = P.bit_length()
     n = p_len - 1 + k
     r = D << (n-k) # shifted D
     
@@ -22,9 +23,22 @@ def CRCremainder(D, P):
         curr_div = P << ((n-p_len)-i)
         r = r ^ curr_div
         if r == 0: break
-    return (r, (D << (n-k)) + r)
+    return ((D << (n-k)) + r, r) # (T encoded frame, F remainder)
+
+def crc_check(T, P):
+    n = T.bit_length(); p_len = P.bit_length()
+    k = n - (p_len-1)
     
-F, T = CRCremainder(D,P)
-print(f"{bin(T)[2:]:>{n}}")
-check,_ = CRCremainder(T,P)
-print(check == 0)
+    for i in range(k):
+        if not T >> (n-(i+1)): continue # should be 1 or 0, skip on 0
+        curr_div = P << ((n-p_len)-i)
+        T = T ^ curr_div
+        if T == 0: break
+    return (T == 0, T) # (check, F remainder)
+
+T, F = crc_encode(D, P)
+print(f"")
+TE1 = T ^ E1
+TE2 = T ^ E2
+print(crc_check(TE1, P))
+print(crc_check(TE2, P))
