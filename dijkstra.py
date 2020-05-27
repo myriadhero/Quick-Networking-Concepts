@@ -1,5 +1,6 @@
 """
 SEE312, Deakin Uni, Kirill Duplyakin
+____________
 
 https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm#Algorithm
 
@@ -37,14 +38,15 @@ node is "visited" as above: the algorithm can stop once the destination node has
 the smallest tentative distance among all "unvisited" nodes 
 (and thus could be selected as the next "current").
 
-___________
+____________
 
 to do:
-    exceptions for invalid usage, eg. if node doesn't exist
-    check for other edge cases
+    test for edge cases
+    raise exceptions for improper use
 
 """
 from collections import OrderedDict, defaultdict
+from math import inf
 
 # graph = {node:(edges_from_node)} where an edge is (target_node, cost)
 g = {
@@ -54,12 +56,12 @@ g = {
         4:((1,7),(2,2),(3,3),(5,1)),
         5:((3,1),(4,1),(6,2)),
         6:((3,8),(5,4)),
-        7:((1,1),),
-        8:((3,1),),
     }
 
 def dijkstra(graph, start, end):
-    unvisited = defaultdict(lambda: {"cost": float("inf"), "prev_node": None})
+    if not ((start in graph) and (end in graph)): 
+        raise ValueError("Start or end node not in graph")
+    unvisited = defaultdict(lambda: {"cost": inf, "prev_node": None})
     curr_cost = 0
     unvisited[start]["cost"] = curr_cost
     visited = OrderedDict()
@@ -68,9 +70,9 @@ def dijkstra(graph, start, end):
     while True:
         visited[current] = {"cost": curr_cost, 
                             "prev_node": unvisited[current]["prev_node"]}
-        if end in visited: break
+        if (end in visited): break
 
-        for target, cost in g[current]:
+        for target, cost in graph[current]:
             if target in visited: continue # means we've been there via the shortest path
             
             new_cost = curr_cost + cost
@@ -78,25 +80,44 @@ def dijkstra(graph, start, end):
                 unvisited[target] = {"cost": new_cost, "prev_node":current}
     
         del unvisited[current]
-
+        # if (len(unvisited) == 1):
+        #     pass
+        # if (len(unvisited) == 0): 
+        #     break
         current, curr_cost = next(iter(sorted(unvisited.items(), 
                             key = lambda x: x[1]["cost"])))
         curr_cost = curr_cost["cost"]
-        if (curr_cost == float("inf")): 
+        if (curr_cost == inf): 
             visited[end] = unvisited[end]
             break
     
     path = []
     if visited[end]['prev_node']:
         path = [end]
-        while True:
-            if path[-1] == start: break
+        while path[-1] != start:
             path.append(visited[path[-1]]['prev_node'])
         
-    
-    return (reversed(path) if path else [None], visited)
+    return (path[::-1] if path else [None], visited)
 
-path, visited = dijkstra(g,1,6)
+g1 = {
+        1:((2,2),(3,5),(4,1),(11,11)),
+        2:((1,3),(3,3),(4,2),(7,6)),
+        3:((1,8),(2,6),(4,4),(5,1),(6,5),(12,6)),
+        4:((1,7),(2,2),(3,3),(5,1),(14,9)),
+        5:((3,1),(4,1),(6,2),(8,8),(10,5)),
+        6:((3,8),(5,4),(9,4),(11,3),(12,13)),
+        7:((1,1),(3,5),(4,1),(12,9),(13,12)),
+        8:((3,1),(4,1),(6,2)),
+        9:((1,1),(4,4),(5,1),(6,5)),
+        10:((3,1),(3,8),(5,4)),
+        11:((1,1),(2,2),(3,5),(10,10)),
+        12:((3,1),(13,6)),
+        13:((1,1),(14,7)),
+        14:((3,1),(3,5),(4,1),(9,5),(11,9)),
+    }
+
+path, visited = dijkstra(g1,1,11)
 
 print("Visited during search:\n"+"\n".join([str(s) for s in visited.items()]))
-print("Best path:","->".join(list(str(s) for s in path)))
+print("Best path:","->".join(list(str(s) for s in path)), 
+            f"for total cost of {visited[path[-1]]['cost']}.")
