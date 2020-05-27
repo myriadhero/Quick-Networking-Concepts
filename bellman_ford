@@ -1,0 +1,108 @@
+"""
+SEE312, Deakin Uni, Kirill Duplyakin
+___________
+
+Bellman Ford Algo has 2 implementations, commonly it loops through all nodes/edges a few times
+
+Instead of 'greedily' selecting the next node to travel to like Dijkstra's algo, 
+loop through all nodes (max hops) times and update on each iteration. 
+
+
+Bellman Ford [FORD62] as described in Data & Computer Communications(8th Ed.) by William Stallings
+
+Instead of looping through the nodes, consider nodes that are h hops away.
+# Init L0n(n) = inf for all n != s
+    # Init Lh(s) = 0, for all h
+
+___________
+to do:
+    implement negative costs
+
+"""
+
+from collections import OrderedDict, defaultdict
+from math import inf
+
+# graph = {node:(edges_from_node)} where an edge is (target_node, cost)
+g = {
+        1:((2,2),(3,5),(4,1)),
+        2:((1,3),(3,3),(4,2)),
+        3:((1,8),(2,6),(4,4),(5,1),(6,5)),
+        4:((1,7),(2,2),(3,3),(5,1)),
+        5:((3,1),(4,1),(6,2)),
+        6:((3,8),(5,4)),
+    }
+
+
+def bellmanford_common(graph, start):
+    if start not in graph: 
+        raise ValueError("Start node not in graph")
+    nodes_costs = defaultdict(lambda: {"cost": inf, "prev_node": None})
+    nodes_costs[start]["cost"] = 0
+    updates = []
+
+    for i in range(1,len(graph)): # max number of hops is number of nodes -1
+        num_updates = len(updates) # track updates and stop early if no more are needed
+        for node, edges in graph.items(): 
+            for target, target_cost in edges:
+                total_cost = nodes_costs[node]["cost"] + target_cost
+                if total_cost < nodes_costs[target]["cost"]:
+                    nodes_costs[target] = {"cost":total_cost,"prev_node":node}
+                    updates.append((i, {target: nodes_costs[target]}))
+        if num_updates == len(updates): break
+    return(dict(nodes_costs), updates)
+
+
+def bford_book(graph, start_node):
+    if start not in graph: 
+        raise ValueError("Start node not in graph")
+    s = start_node
+    h = len(graph) - 1
+    Lh = defaultdict(lambda: {"cost": inf, "prev_node": None})
+    Lh[s]["cost"] = 0
+    to_eval = [s]; to_eval_next = set()
+    updates = []
+    
+    for hop in range(h):
+        for current in to_eval:
+            for target, t_cost in graph[current]:
+                if target == s: continue
+                new_cost = Lh[current]["cost"] + t_cost
+                if new_cost < Lh[target]["cost"]:
+                    to_eval_next.add(target) 
+                    Lh[target] = {"cost": new_cost, "prev_node": current}
+                    updates.append((hop, target, new_cost, current))
+        if not to_eval: break # nothing to update
+        to_eval = sorted(to_eval_next)
+        to_eval_next = set()
+
+    return dict(Lh), updates
+
+
+start = 1; end = 6
+nodes_costs, updates = bellmanford_common(g, start)
+
+# print(nodes_costs)
+for update in updates:
+    print(update)
+print(len(updates))
+path = [end]
+while path[-1] != start:
+    path.append(nodes_costs[path[-1]]["prev_node"])
+print(path[::-1])
+
+
+start = 1; end = 6
+Lh, updates = bford_book(g,start)
+for update in updates:
+    print(update)
+print(len(updates))
+path = [end]
+while path[-1] != start:
+    path.append(Lh[path[-1]]["prev_node"])
+print(path[::-1])
+
+
+
+
+    
