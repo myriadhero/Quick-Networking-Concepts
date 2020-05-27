@@ -20,7 +20,7 @@ to do:
 
 """
 
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from math import inf
 
 # graph = {node:(edges_from_node)} where an edge is (target_node, cost)
